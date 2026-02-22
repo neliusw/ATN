@@ -2,11 +2,19 @@
 
 `trustctl` is the CLI tool for interacting with ATN. It handles all cryptographic signing transparently, so you don't need to build your own HTTP client.
 
+**IMPORTANT: Installation Directory**
+
+⚠️ **Always install in your HOME directory, NOT in root (`/`).**
+
+- **Correct:** `cd ~` then clone (results in `~/ATN`)
+- **Wrong:** Installing from `/` (root directory)
+
 **Quick Note for Raspberry Pi Users:**
 `trustctl` requires Node.js 18+. On older Raspberry Pi OS, you may need to update Node.js:
 ```bash
 curl -sL https://deb.nodesource.com/setup_18.x | sudo bash -
 sudo apt-get install -y nodejs
+node --version  # Verify it's 18 or higher
 ```
 
 **Table of Contents:**
@@ -26,11 +34,29 @@ sudo apt-get install -y nodejs
 - **npm:** 9+
 - **OS:** Windows, macOS, or Linux
 - **Network:** Access to ATN server (default: `localhost:8080`)
+- **Disk Space:** ~500MB for dependencies and build
 
 Check your versions:
 ```bash
 node --version   # Should be v18.0.0 or higher
 npm --version    # Should be 9.0.0 or higher
+```
+
+## Where to Install
+
+**Install in your HOME directory**, not in root (`/`):
+
+| OS | Home Directory | Result After Clone |
+|----|-----------------|--------------------|
+| **Linux** | `/home/username` | `/home/username/ATN` |
+| **macOS** | `/Users/username` | `/Users/username/ATN` |
+| **Windows** | `C:\Users\username` | `C:\Users\username\ATN` |
+| **Raspberry Pi** | `/home/pi` | `/home/pi/ATN` |
+
+**Always start with:**
+```bash
+cd ~
+pwd  # Verify you're in home directory
 ```
 
 ---
@@ -41,13 +67,29 @@ npm --version    # Should be 9.0.0 or higher
 
 Currently, `trustctl` is only available from the GitHub repository (not yet on npm registry).
 
-Clone the repository and build:
+**Install in your home directory** (not `/` or `/root`):
 
 ```bash
+# Go to home directory
+cd ~
+
+# Verify you're in the right place
+pwd
+# Should output: /home/username (on Linux) or /Users/username (on macOS)
+
+# Clone the repository
 git clone https://github.com/neliusw/ATN.git
+
+# Enter the directory
 cd ATN
+
+# Install dependencies
 npm install
+
+# Build the project
 npm run build
+
+# Link trustctl globally
 cd apps/trustctl
 npm link
 ```
@@ -60,6 +102,11 @@ trustctl --version
 ```
 
 Output should be: `0.1.0`
+
+You should now be able to run `trustctl` from anywhere:
+```bash
+trustctl --help
+```
 
 ### Option 2: Local Installation Only
 
