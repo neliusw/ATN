@@ -1,0 +1,21 @@
+{
+  "name": "@atn/core",
+  "version": "0.1.0",
+  "description": "ATN core primitives: crypto, types, state machine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4",
+    "@types/node": "^20.10.5"
+  },
+  "dependencies": {
+    "json-canon": "^1.0.0"
+  }
+}

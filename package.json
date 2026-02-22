@@ -1,0 +1,23 @@
+{
+  "name": "atn",
+  "version": "0.1.0",
+  "description": "Agent Trust Node - cryptographic substrate for agent coordination",
+  "private": true,
+  "workspaces": [
+    "packages/core",
+    "apps/trust-node",
+    "apps/trustctl"
+  ],
+  "scripts": {
+    "build": "npm run build -ws",
+    "dev": "npm run dev -ws",
+    "test": "npm run test -ws",
+    "test:watch": "npm run test:watch -ws",
+    "clean": "npm run clean -ws && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4",
+    "@types/node": "^20.10.5"
+  }
+}
