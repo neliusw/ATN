@@ -62,20 +62,22 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`\n✓ ATN Trust Node listening on port ${PORT}`);
-  console.log(`  Database: ${DB_PATH}`);
-  console.log(`  API: http://localhost:${PORT}\n`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  server.close(() => {
-    closeDB();
-    process.exit(0);
+// Start server only if this is the main module
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`\n✓ ATN Trust Node listening on port ${PORT}`);
+    console.log(`  Database: ${DB_PATH}`);
+    console.log(`  API: http://localhost:${PORT}\n`);
   });
-});
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    server.close(() => {
+      closeDB();
+      process.exit(0);
+    });
+  });
+}
 
 export default app;

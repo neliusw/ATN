@@ -37,6 +37,13 @@ export function verifySignature(req: Request, res: Response, next: NextFunction)
     return;
   }
 
+  // Skip signature verification for agent registration (POST /agents)
+  // Agent registration is self-signed and doesn't require database lookup
+  if (req.method === 'POST' && req.path === '/agents') {
+    next();
+    return;
+  }
+
   // All other methods (POST, PUT, DELETE) must have valid signatures
   const body = req.body as SignedRequestBody;
 

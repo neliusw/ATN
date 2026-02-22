@@ -15,36 +15,53 @@ import { StoredAgent } from './types';
 const router = Router();
 
 /**
- * POST /agents - Register agent
+ * POST /agents - Register agent (self-signed)
  *
- * Request body (signed):
+ * Request body (signed by the agent's own key):
  * {
  *   "payload": { "name": "My Agent", "publicKey": "..." },
  *   "signature": "...",
  *   "signerId": "did:atn:..."
  * }
  *
- * The signerId in the request must match the agent being registered.
+ * For agent registration, we manually verify the signature matches the public key,
+ * since the agent doesn't exist in the database yet.
  */
-router.post('/agents', verifySignature, (req: Request, res: Response) => {
+router.post('/agents', (req: Request, res: Response) => {
   try {
-    const { payload } = req.body;
-    const { signerId } = req.body;
+    const { payload, signature, signerId } = req.body;
 
-    if (!payload || !payload.name || !payload.publicKey) {
+    if (!payload || !payload.name || !payload.publicKey || !signature) {
       res.status(400).json({
         error: 'Invalid agent payload',
-        details: 'Agent must include name and publicKey',
+        details: 'Agent must include name, publicKey, and a signature',
       });
       return;
     }
 
-    // Verify that the signing agent is registering itself
-    // The signerId should match a DID derived from the public key
-    const derivedAgentId = ATN.deriveAgentId(payload.publicKey as ATN.PublicKey);
-    const deriveDidFromPubkey = `did:atn:${payload.publicKey.substring(0, 16)}`;
+    // Manually verify signature for agent registration
+    const canonical = ATN.canonicalize(payload);
+    const bytes = Buffer.from(canonical, 'utf-8');
+    const isValid = ATN.verify(bytes, signature as ATN.Signature, payload.publicKey as ATN.PublicKey);
 
-    // For now, accept the signerId as-is but verify the signature matches the key
+    if (!isValid) {
+      res.status(401).json({
+        error: 'Invalid signature',
+        details: 'Signature does not match the provided public key',
+      });
+      return;
+    }
+
+    // Verify that signerId matches the public key
+    const expectedDID = `did:atn:${payload.publicKey.substring(0, 16)}`;
+    if (signerId !== expectedDID) {
+      res.status(400).json({
+        error: 'Invalid signerId',
+        details: `SignerId must be derived from public key: ${expectedDID}`,
+      });
+      return;
+    }
+
     const db = getDB();
 
     // Check if agent already exists

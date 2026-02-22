@@ -10,7 +10,17 @@
       "Bash(git commit:*)",
       "Bash(npx ts-node:*)",
       "Bash(node scripts/demo-e2e.js:*)",
-      "Bash(timeout 3 npm run dev:*)"
+      "Bash(timeout 3 npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(npm link:*)",
+      "Bash(trustctl --help:*)",
+      "Bash(trustctl config:set-host:*)",
+      "Bash(trustctl agents:*)",
+      "Bash(trustctl config:*)",
+      "Bash(trustctl jobs:*)",
+      "Bash(trustctl audit:*)",
+      "Bash(trustctl:*)",
+      "Bash(git remote add:*)"
     ],
     "deny": [],
     "ask": []
