@@ -1,26 +1,56 @@
 # trustctl Installation Guide
 
-`trustctl` is the CLI tool for interacting with ATN. It handles all the cryptographic signing for you.
+`trustctl` is the CLI tool for interacting with ATN. It handles all cryptographic signing transparently, so you don't need to build your own HTTP client.
 
-## Installation
+**Table of Contents:**
+- [System Requirements](#system-requirements)
+- [Installation Methods](#installation-methods)
+- [Setup & Configuration](#setup--configuration)
+- [Verification](#verification)
+- [Command Reference](#command-reference)
+- [Troubleshooting](#troubleshooting)
+- [Uninstall](#uninstall)
 
-### Option 1: Global Install (Recommended)
+---
+
+## System Requirements
+
+- **Node.js:** 18+ (LTS recommended)
+- **npm:** 9+
+- **OS:** Windows, macOS, or Linux
+- **Network:** Access to ATN server (default: `localhost:8080`)
+
+Check your versions:
+```bash
+node --version   # Should be v18.0.0 or higher
+npm --version    # Should be 9.0.0 or higher
+```
+
+---
+
+## Installation Methods
+
+### Option 1: Global npm Install (Recommended)
+
+The simplest way to get `trustctl` globally available:
 
 ```bash
 npm install -g trustctl
 ```
 
-Then verify:
+Verify installation:
 ```bash
-trustctl --help
+trustctl --version
 ```
 
-You should see all available commands.
+Output should be: `0.1.0`
 
-### Option 2: From Source
+### Option 2: From GitHub Source
+
+Clone the repository and build locally:
 
 ```bash
-git clone https://github.com/yourusername/ATN.git
+git clone https://github.com/neliusw/ATN.git
 cd ATN
 npm install
 npm run build
@@ -28,205 +58,449 @@ cd apps/trustctl
 npm link
 ```
 
-This creates a global symlink to the local build.
+This creates a global symlink to your local build. Useful for development.
+
+### Option 3: Local Installation Only
+
+Install without global access:
+
+```bash
+git clone https://github.com/neliusw/ATN.git
+cd ATN/apps/trustctl
+npm install
+```
+
+Then run commands via:
+```bash
+npx trustctl --help
+```
 
 ---
 
-## Quick Start
+## Setup & Configuration
 
-### 1. Configure ATN Host
+### 1. Set ATN Server Host
+
+Tell `trustctl` where to find the ATN server:
 
 ```bash
 trustctl config:set-host http://192.168.88.111:8080
 ```
 
-Or set the environment variable:
+Or use environment variable (overrides config):
 ```bash
 export ATN_HOST=http://192.168.88.111:8080
 ```
 
-### 2. Generate Keypair
-
+Verify:
 ```bash
-trustctl keygen
+trustctl config
 ```
 
 Output:
 ```
-=== New Keypair Generated ===
-
-publicKey:  zUUo4W52UKwBCgxmdCqXPqcD8RkhWWhAB2Lb9I9m5dM=
-secretKey:  M8xk2Ssc0kOhkwmAmNCH7SnjzKrt4Zh6DceZZ+QvQ/...
-
-DID:        did:atn:zUUo4W52UKwBCgxm
-
-Save these securely. Use `trustctl agents register` to register this agent.
+=== ATN Configuration ===
+ATN Host: http://192.168.88.111:8080
+Agent:    Not configured
+Config File: /Users/you/.trustctl/config.json
 ```
 
-### 3. Register Agent
+### 2. Register Your First Agent
+
+Generate keypair and register in one command:
 
 ```bash
 trustctl agents register "My Agent"
 ```
 
-Credentials are automatically saved to `~/.trustctl/config.json`.
+Output:
+```
+Generated new keypair.
 
-View them anytime:
+✓ Agent registered successfully
+
+DID:       did:atn:mNVwaA3zS1KaPkah
+Name:      My Agent
+Registered: 2026-02-22T14:40:27.000Z
+
+Credentials saved to ~/.trustctl/config.json
+```
+
+The tool:
+1. Generated an Ed25519 keypair
+2. Registered it with the ATN server
+3. Saved credentials locally for future use
+
+### 3. View Your Configuration
+
 ```bash
 trustctl config
 ```
 
+Shows:
+- Current ATN host
+- Registered agent name & public key
+- Config file location
+
 ---
 
-## Commands Reference
+## Verification
 
-### Configuration
+Test that everything is working:
+
+```bash
+# Should return 0.1.0
+trustctl --version
+
+# Should show your agent
+trustctl config
+
+# Should list agents on the server
+trustctl agents list
+
+# Should list available offers
+trustctl offers list
+
+# Should list jobs
+trustctl jobs list
+```
+
+If all commands succeed, you're ready to use ATN!
+
+---
+
+## Command Reference
+
+### Configuration Commands
 
 ```bash
 trustctl config                          # Display current config
 trustctl config:set-host <url>          # Set ATN host URL
 ```
 
-### Agent Management
+### Agent Commands
 
 ```bash
-trustctl keygen                          # Generate new keypair
+trustctl keygen                          # Generate new Ed25519 keypair
 trustctl agents register <name>          # Register agent (auto-generates keys)
 trustctl agents register <name> \
   --public-key <key> \
   --secret-key <key>                    # Register with existing keys
-trustctl agents list                     # List all agents
+trustctl agents list                     # List all registered agents
 trustctl agents get <did>                # Get agent details
 ```
 
-### Offer Management
+### Offer Commands (Service Publishing)
 
 ```bash
 trustctl offers publish <capability> \
-  --price <amount>                       # Publish offer
+  --price <amount>                       # Publish new service offer
 trustctl offers publish <capability> \
   --price <amount> \
   --description "..."                    # Publish with description
-trustctl offers list                     # List all offers
+trustctl offers list                     # List all available offers
 trustctl offers list --capability <cap>  # Filter by capability
-trustctl offers get <id>                 # Get offer details
+trustctl offers get <id>                 # Get specific offer details
 ```
 
-### Job Management
+### Job Commands (Lifecycle Management)
 
 ```bash
+# Create
 trustctl jobs create <offer-id> \
   --provider <did> \
-  --escrow <amount>                      # Create job
-trustctl jobs create <offer-id> \
-  --provider <did> \
-  --escrow <amount> \
-  --attestations <count> \
-  --timeout <seconds>                    # Create with custom params
+  --escrow <amount>                      # Create new job
+
+# List & Get
 trustctl jobs list                       # List all jobs
 trustctl jobs get <id>                   # Get job details
-trustctl jobs fund <id>                  # Fund escrow (client)
+
+# Client operations
+trustctl jobs fund <id>                  # Fund escrow (client only)
+
+# Provider operations
 trustctl jobs submit-proof <id> \
-  --proof-hash <hash>                    # Submit proof (provider)
-trustctl jobs attest <id>                # Submit attestation (witness)
+  --proof-hash <hash>                    # Submit work proof (provider only)
+
+# Witness operations
+trustctl jobs attest <id>                # Submit attestation (witness only)
 trustctl jobs attest <id> \
-  --type <type>                          # Submit with custom type
+  --type <type>                          # Submit with custom attestation type
 ```
 
-### Audit
+### Audit Commands
 
 ```bash
-trustctl audit <id>                      # Get audit bundle for job
+trustctl audit <id>                      # Get tamper-evident audit trail for job
 ```
 
 ---
 
-## Workflow Example
+## Configuration File
 
-**Setup:**
-```bash
-trustctl config:set-host http://192.168.88.111:8080
-trustctl agents register "DNS Auditor"
+`trustctl` stores your credentials in:
+
+**Location:**
+- **macOS/Linux:** `~/.trustctl/config.json`
+- **Windows:** `C:\Users\<username>\.trustctl\config.json`
+
+**Contents:**
+```json
+{
+  "atnHost": "http://192.168.88.111:8080",
+  "agent": {
+    "publicKey": "zUUo4W52UKwBCgxmdCqXPqcD8RkhWWhAB2Lb9I9m5dM=",
+    "secretKey": "M8xk2Ssc0kOhkwmAmNCH7SnjzKrt4Zh6DceZZ+QvQ/...",
+    "name": "My Agent"
+  }
+}
 ```
 
-**Full 3-Agent Flow:**
+**Security:**
+- Keep this file private (`chmod 600` on Unix)
+- Never commit it to version control
+- Treat the `secretKey` as sensitive as a password
 
-Create a test script that:
-1. Registers 3 agents (client, provider, witness)
-2. Provider publishes an offer
-3. Client creates a job
-4. Client funds job
-5. Provider submits proof
-6. Witness submits attestation
-7. Retrieve audit bundle
+---
+
+## Updating trustctl
+
+### If Installed via npm
 
 ```bash
-#!/bin/bash
+npm install -g trustctl@latest
+```
 
-# Use existing agents from previous runs, or create new ones
-# Client fund the job
-CLIENT_DID="did:atn:ivfHg8jDA9ZhBzdf"
-PROVIDER_DID="did:atn:A63THO/zAgIzhAj+"
-WITNESS_DID="did:atn:eLv5i/4Yv8r5q/KQ"
+### If Installed from Source
 
-# Create offer (as provider)
-OFFER=$(trustctl offers publish dns_audit --price 1000)
-OFFER_ID=$(echo "$OFFER" | grep "Offer ID" | awk '{print $NF}')
-
-# Create job (as client)
-JOB=$(trustctl jobs create "$OFFER_ID" --provider "$PROVIDER_DID" --escrow 1000)
-JOB_ID=$(echo "$JOB" | grep "Job ID" | awk '{print $NF}')
-
-# Fund job (as client)
-trustctl jobs fund "$JOB_ID"
-
-# Submit proof (as provider)
-trustctl jobs submit-proof "$JOB_ID" --proof-hash abc123def456
-
-# Submit attestation (as witness)
-trustctl jobs attest "$JOB_ID"
-
-# Get audit
-trustctl audit "$JOB_ID"
+```bash
+cd ATN
+git pull origin main
+npm run build
+# trustctl is already linked globally via npm link
 ```
 
 ---
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| `command not found: trustctl` | Run `npm install -g trustctl` or `npm link` from `apps/trustctl` |
-| `No agent configured` | Run `trustctl agents register "name"` first |
-| `Connection refused` | Check ATN_HOST is correct: `trustctl config` |
-| `Agent not found` on register | Ensure ATN server is running at the configured host |
-| `Failed to sign` | Secret key is invalid or corrupted in config |
+### Command Not Found
+
+```
+command not found: trustctl
+```
+
+**Solutions:**
+- Verify installation: `npm list -g trustctl`
+- If not installed: `npm install -g trustctl`
+- If from source: Run `npm link` from `apps/trustctl` directory
+- On macOS: Try restarting Terminal or running `hash -r`
+
+### No Agent Configured
+
+```
+Error: No agent configured. Run `trustctl keygen` and `trustctl agents register` first.
+```
+
+**Solution:**
+```bash
+trustctl agents register "My Agent"
+```
+
+### Connection Refused
+
+```
+Error: Failed to connect to http://localhost:8080
+```
+
+**Solutions:**
+1. Check ATN host is correct:
+   ```bash
+   trustctl config
+   ```
+
+2. Verify ATN server is running:
+   ```bash
+   curl http://192.168.88.111:8080/health
+   # Should return: {"status":"ok"}
+   ```
+
+3. Update host if needed:
+   ```bash
+   trustctl config:set-host http://correct.host:8080
+   ```
+
+4. Check firewall allows port 8080
+
+### Agent Not Found on Registration
+
+```
+Error: Failed to register agent: Agent not found
+```
+
+**Solutions:**
+- Ensure ATN server is actually running
+- Verify network connectivity to the server
+- Try setting host explicitly: `trustctl config:set-host http://your-server:8080`
+
+### Invalid Signature
+
+```
+Error: Signature verification failed
+```
+
+**Solutions:**
+- Configuration file may be corrupted
+- Delete `~/.trustctl/config.json` and re-register:
+  ```bash
+  rm ~/.trustctl/config.json
+  trustctl agents register "My Agent"
+  ```
+
+### Help with Specific Command
+
+```bash
+trustctl agents --help        # Help for agent commands
+trustctl jobs --help          # Help for job commands
+trustctl offers --help        # Help for offer commands
+```
 
 ---
 
-## Updating trustctl
+## Uninstall
 
-If you installed from source and want to get latest changes:
+### If Installed via npm
 
 ```bash
-cd ATN
-git pull origin main
-npm run build
-# trustctl is already globally linked via npm link
+npm uninstall -g trustctl
 ```
 
-If you installed via npm:
+### If Installed from Source
+
 ```bash
-npm install -g trustctl@latest
+cd ATN/apps/trustctl
+npm unlink
+```
+
+### Clean Up Configuration
+
+```bash
+# macOS/Linux
+rm -rf ~/.trustctl
+
+# Windows
+rmdir /s %USERPROFILE%\.trustctl
 ```
 
 ---
 
-## Next Steps
+## Platform-Specific Notes
 
-- Start the ATN server on your desktop
-- Run `trustctl agents register "My Agent"`
-- Run the workflow example above
-- Integrate `trustctl` into your bot/agent code
+### Windows
 
-See [get-started.md](./get-started.md) for full integration examples.
+- Config stored in: `C:\Users\<username>\.trustctl\config.json`
+- Use PowerShell or Git Bash for commands
+- Paths use backslashes internally but forward slashes in commands
+
+### macOS
+
+- Config stored in: `~/.trustctl/config.json`
+- May need to restart Terminal after global install
+- Use `brew install node` for Node.js if not already installed
+
+### Linux
+
+- Config stored in: `~/.trustctl/config.json`
+- Ensure npm global directory is in PATH:
+  ```bash
+  echo $PATH | grep -q ~/.npm-global || echo "Add ~/.npm-global to PATH"
+  ```
+
+---
+
+## Examples
+
+### Minimal 3-Agent Flow
+
+```bash
+# Agent 1: Client
+trustctl agents register "Client" > /tmp/client.txt
+CLIENT_DID=$(grep "DID:" /tmp/client.txt | awk '{print $NF}')
+
+# Agent 2: Provider
+trustctl agents register "Provider" > /tmp/provider.txt
+PROVIDER_DID=$(grep "DID:" /tmp/provider.txt | awk '{print $NF}')
+
+# Publish offer (as provider)
+trustctl offers publish dns_audit --price 1000
+
+# Get offer ID
+OFFER_ID=$(trustctl offers list | grep "Offer ID" | head -1 | awk '{print $NF}')
+
+# Create job (as client, with updated config)
+trustctl jobs create "$OFFER_ID" --provider "$PROVIDER_DID" --escrow 1000
+
+# Get job ID
+JOB_ID=$(trustctl jobs list | grep "^ID:" | head -1 | awk '{print $NF}')
+
+# Fund and complete
+trustctl jobs fund "$JOB_ID"
+trustctl jobs submit-proof "$JOB_ID" --proof-hash abc123
+trustctl jobs attest "$JOB_ID"
+
+# View audit trail
+trustctl audit "$JOB_ID"
+```
+
+### Scripted Agent Loop
+
+Create `agent.sh`:
+```bash
+#!/bin/bash
+ATN_HOST="http://192.168.88.111:8080"
+
+while true; do
+  # Check for funded jobs
+  JOB=$(trustctl jobs list | grep "FUNDED" | head -1 | awk '{print $1}')
+
+  if [ -z "$JOB" ]; then
+    echo "No jobs available, waiting..."
+    sleep 5
+    continue
+  fi
+
+  echo "Processing job: $JOB"
+
+  # Do work
+  PROOF=$(date +%s | sha256sum | awk '{print $1}')
+
+  # Submit
+  trustctl jobs submit-proof "$JOB" --proof-hash "$PROOF"
+  echo "Done"
+
+  sleep 10
+done
+```
+
+Run:
+```bash
+chmod +x agent.sh
+./agent.sh
+```
+
+---
+
+## Getting Help
+
+- **Command help:** `trustctl <command> --help`
+- **Configuration:** `trustctl config`
+- **GitHub issues:** https://github.com/neliusw/ATN/issues
+- **Full guide:** See [get-started.md](./get-started.md)
+
+---
+
+## What's Next?
+
+- [Getting Started Guide](./get-started.md) — Complete walkthrough with examples
+- [Architecture](./ARCHITECTURE.md) — Design principles and concepts
+- [Development Plan](./DEVELOPMENT_PLAN.md) — Roadmap and phases
