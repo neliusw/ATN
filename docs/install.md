@@ -2,6 +2,13 @@
 
 `trustctl` is the CLI tool for interacting with ATN. It handles all cryptographic signing transparently, so you don't need to build your own HTTP client.
 
+**Quick Note for Raspberry Pi Users:**
+`trustctl` requires Node.js 18+. On older Raspberry Pi OS, you may need to update Node.js:
+```bash
+curl -sL https://deb.nodesource.com/setup_18.x | sudo bash -
+sudo apt-get install -y nodejs
+```
+
 **Table of Contents:**
 - [System Requirements](#system-requirements)
 - [Installation Methods](#installation-methods)
@@ -30,24 +37,11 @@ npm --version    # Should be 9.0.0 or higher
 
 ## Installation Methods
 
-### Option 1: Global npm Install (Recommended)
+### Option 1: From GitHub Source (Current - V0.1)
 
-The simplest way to get `trustctl` globally available:
+Currently, `trustctl` is only available from the GitHub repository (not yet on npm registry).
 
-```bash
-npm install -g trustctl
-```
-
-Verify installation:
-```bash
-trustctl --version
-```
-
-Output should be: `0.1.0`
-
-### Option 2: From GitHub Source
-
-Clone the repository and build locally:
+Clone the repository and build:
 
 ```bash
 git clone https://github.com/neliusw/ATN.git
@@ -58,9 +52,16 @@ cd apps/trustctl
 npm link
 ```
 
-This creates a global symlink to your local build. Useful for development.
+This creates a global symlink to your build, making `trustctl` available globally.
 
-### Option 3: Local Installation Only
+Verify installation:
+```bash
+trustctl --version
+```
+
+Output should be: `0.1.0`
+
+### Option 2: Local Installation Only
 
 Install without global access:
 
@@ -74,6 +75,16 @@ Then run commands via:
 ```bash
 npx trustctl --help
 ```
+
+### Option 3: npm Global Install (Future)
+
+Once `trustctl` is published to npm registry (planned for V0.2):
+
+```bash
+npm install -g trustctl
+```
+
+For now, use **Option 1** above.
 
 ---
 
@@ -265,19 +276,26 @@ trustctl audit <id>                      # Get tamper-evident audit trail for jo
 
 ## Updating trustctl
 
-### If Installed via npm
-
-```bash
-npm install -g trustctl@latest
-```
-
-### If Installed from Source
+### If Installed from Source (Current)
 
 ```bash
 cd ATN
 git pull origin main
 npm run build
 # trustctl is already linked globally via npm link
+```
+
+Verify the update:
+```bash
+trustctl --version
+```
+
+### If Installed via npm (Future)
+
+Once published to npm registry:
+
+```bash
+npm install -g trustctl@latest
 ```
 
 ---
